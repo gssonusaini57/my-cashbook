@@ -3,60 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Cash Book</title>
+    <title>Quick Cash Book</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 15px; display: flex; justify-content: center; }
-        .app-container { width: 100%; max-width: 400px; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 15px; display: flex; justify-content: center; }
+        .app-container { width: 100%; max-width: 400px; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); overflow: hidden; }
         .header { background: #1a73e8; color: white; padding: 25px; text-align: center; }
-        .balance-title { font-size: 14px; opacity: 0.9; }
-        .balance-amount { font-size: 32px; font-weight: bold; margin-top: 5px; }
+        .balance-amount { font-size: 34px; font-weight: bold; margin-top: 5px; }
         
-        .form-section { padding: 20px; border-bottom: 8px solid #f0f2f5; }
-        input, select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
-        .btn-save { width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; }
-        .btn-save:disabled { background: #ccc; }
+        .form-section { padding: 20px; background: #fff; }
+        input { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: #1a73e8; }
+        
+        .button-group { display: flex; gap: 10px; }
+        .btn { flex: 1; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
+        .btn-in { background: #28a745; }
+        .btn-in:active { background: #1e7e34; transform: scale(0.96); }
+        .btn-out { background: #dc3545; }
+        .btn-out:active { background: #bd2130; transform: scale(0.96); }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
 
-        .history-section { padding: 20px; }
-        .history-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; color: #333; }
-        .refresh-btn { background: #1a73e8; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; }
+        .history-section { padding: 20px; background: #fafafa; min-height: 200px; }
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .refresh-link { color: #1a73e8; font-size: 13px; cursor: pointer; text-decoration: underline; }
         
-        .log-container { max-height: 300px; overflow-y: auto; }
-        .entry-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; align-items: center; }
+        .entry-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; background: white; margin-bottom: 5px; border-radius: 8px; }
         .entry-info { display: flex; flex-direction: column; }
-        .entry-remark { font-weight: 600; color: #2c3e50; }
-        .entry-date { font-size: 11px; color: #7f8c8d; }
-        .amt-in { color: #2ecc71; font-weight: bold; }
-        .amt-out { color: #e74c3c; font-weight: bold; }
-        #loading { text-align: center; color: #666; font-size: 14px; padding: 10px; }
+        .remark { font-weight: 600; color: #333; }
+        .date { font-size: 11px; color: #888; }
+        .amt-in { color: #28a745; font-weight: bold; }
+        .amt-out { color: #dc3545; font-weight: bold; }
+        #statusMsg { text-align: center; font-size: 12px; margin-top: 10px; color: #666; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
     <div class="header">
-        <div class="balance-title">Current Balance</div>
+        <div style="font-size: 14px; opacity: 0.9;">Total Balance</div>
         <div class="balance-amount">₹<span id="totalDisplay">0</span></div>
     </div>
 
     <div class="form-section">
-        <form id="cashForm">
-            <input type="number" id="amt" placeholder="Amount (₹)" required>
-            <input type="text" id="note" placeholder="Kihnu ditte/Kithon aaye?" required>
-            <select id="mode">
-                <option value="IN">Cash IN (+)</option>
-                <option value="OUT">Cash OUT (-)</option>
-            </select>
-            <button type="submit" id="submitBtn" class="btn-save">Save Entry</button>
-        </form>
+        <input type="number" id="amt" placeholder="Amount (₹)" required>
+        <input type="text" id="note" placeholder="Vivar (Kihnu/Kithon?)" required>
+        
+        <div class="button-group">
+            <button onclick="sendData('IN')" id="btnIn" class="btn btn-in">CASH IN (+)</button>
+            <button onclick="sendData('OUT')" id="btnOut" class="btn btn-out">CASH OUT (-)</button>
+        </div>
+        <div id="statusMsg">Data load ho reha hai...</div>
     </div>
 
     <div class="history-section">
-        <div class="history-title">
-            <b>Recent History</b>
-            <button class="refresh-btn" onclick="fetchHistory()">Refresh</button>
+        <div class="history-header">
+            <b style="color:#555">Recent Transactions</b>
+            <span class="refresh-link" onclick="fetchHistory()">Refresh</span>
         </div>
-        <div id="loading" style="display:none;">Loading...</div>
-        <div id="historyLog" class="log-container">
+        <div id="historyLog">
             </div>
     </div>
 </div>
@@ -64,15 +67,12 @@
 <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyrcmwdyhzj4DHLdbMNU3ZXX8Z-wmoqXPxrvM9E3J9YZlSGWycuMCKqIyueRfh9P-gV/exec';
 
-    // 1. Data load karan da function
+    // 1. Data Fetch Karan Layi
     async function fetchHistory() {
         const log = document.getElementById('historyLog');
         const totalDisp = document.getElementById('totalDisplay');
-        const loader = document.getElementById('loading');
+        const status = document.getElementById('statusMsg');
         
-        loader.style.display = "block";
-        log.innerHTML = "";
-
         try {
             const response = await fetch(scriptURL);
             const data = await response.json();
@@ -88,8 +88,8 @@
                 html += `
                     <div class="entry-item">
                         <div class="entry-info">
-                            <span class="entry-remark">${item.remark}</span>
-                            <span class="entry-date">${new Date(item.date).toLocaleDateString()}</span>
+                            <span class="remark">${item.remark}</span>
+                            <span class="date">${new Date(item.date).toLocaleDateString('en-IN')}</span>
                         </div>
                         <div class="${isIN ? 'amt-in' : 'amt-out'}">
                             ${isIN ? '+' : '-'} ₹${val}
@@ -98,46 +98,57 @@
             });
 
             totalDisp.innerText = total.toLocaleString('en-IN');
-            log.innerHTML = html || "<p style='text-align:center; color:#999;'>No history found</p>";
+            log.innerHTML = html || "<p style='text-align:center; color:#999;'>No history yet</p>";
+            status.innerText = "Ready";
         } catch (err) {
-            log.innerHTML = "<p style='color:red; text-align:center;'>Error loading data!</p>";
-        } finally {
-            loader.style.display = "none";
+            status.innerText = "Error loading history!";
         }
     }
 
-    // 2. Data save karan da function
-    document.getElementById('cashForm').addEventListener('submit', e => {
-        e.preventDefault();
-        const btn = document.getElementById('submitBtn');
-        btn.disabled = true;
-        btn.innerText = "Saving...";
+    // 2. Data Send Karan Layi
+    async function sendData(type) {
+        const amtInput = document.getElementById('amt');
+        const noteInput = document.getElementById('note');
+        const status = document.getElementById('statusMsg');
+        const btnIn = document.getElementById('btnIn');
+        const btnOut = document.getElementById('btnOut');
+
+        if(!amtInput.value || !noteInput.value) {
+            alert("Please Amount te Detail bharo!");
+            return;
+        }
 
         const payload = {
-            amount: document.getElementById('amt').value,
-            remark: document.getElementById('note').value,
-            type: document.getElementById('mode').value
+            amount: amtInput.value,
+            remark: noteInput.value,
+            type: type
         };
 
-        fetch(scriptURL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify(payload)
-        })
-        .then(() => {
-            document.getElementById('cashForm').reset();
-            btn.disabled = false;
-            btn.innerText = "Save Entry";
-            fetchHistory(); // Turant update karo
-        })
-        .catch(() => {
-            alert("Error saving data!");
-            btn.disabled = false;
-            btn.innerText = "Try Again";
-        });
-    });
+        // Buttons disable karo
+        btnIn.disabled = true;
+        btnOut.disabled = true;
+        status.innerText = "Saving to Google Sheets...";
 
-    // Page khulde hi data load karo
+        try {
+            await fetch(scriptURL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(payload)
+            });
+            
+            amtInput.value = "";
+            noteInput.value = "";
+            status.innerText = "Saved Successfully!";
+            fetchHistory(); // List update karo
+        } catch (e) {
+            alert("Error saving!");
+        } finally {
+            btnIn.disabled = false;
+            btnOut.disabled = false;
+        }
+    }
+
+    // Start te data load karo
     fetchHistory();
 </script>
 
