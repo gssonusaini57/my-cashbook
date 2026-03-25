@@ -3,30 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cash Book with Edit</title>
+    <title>Cash Book - Edit & Delete</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 15px; display: flex; justify-content: center; }
         .app-container { width: 100%; max-width: 400px; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
         .header { background: #1a73e8; color: white; padding: 25px; text-align: center; }
         .balance-amount { font-size: 32px; font-weight: bold; margin-top: 5px; }
-        
         .form-section { padding: 20px; border-bottom: 8px solid #f4f7f6; }
         input { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
-        
         .btn-group { display: flex; gap: 10px; }
         .btn { flex: 1; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; }
         .btn-in { background: #28a745; }
         .btn-out { background: #dc3545; }
         .btn-update { background: #f39c12; width: 100%; display: none; margin-top: 10px; }
-        .btn:disabled { background: #ccc; cursor: not-allowed; }
-
         .history-section { padding: 20px; background: #fafafa; }
-        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; color: #555; }
         .entry-item { background: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .entry-info { display: flex; flex-direction: column; }
         .remark { font-weight: 600; color: #333; }
-        .date { font-size: 11px; color: #888; margin-top: 2px; }
-        .edit-btn { color: #1a73e8; font-size: 12px; cursor: pointer; text-decoration: underline; margin-top: 5px; width: fit-content; }
+        .date { font-size: 11px; color: #888; }
+        .actions { font-size: 12px; margin-top: 5px; }
+        .edit-btn { color: #1a73e8; cursor: pointer; text-decoration: underline; margin-right: 10px; }
+        .del-btn { color: #dc3545; cursor: pointer; text-decoration: underline; }
         .amt-in { color: #28a745; font-weight: bold; }
         .amt-out { color: #dc3545; font-weight: bold; }
         #status { text-align: center; font-size: 13px; color: #666; margin-top: 10px; }
@@ -43,130 +39,93 @@
     <div class="form-section">
         <input type="hidden" id="editRow">
         <input type="hidden" id="editType">
-
-        <input type="number" id="amt" placeholder="Amount (₹)" required>
-        <input type="text" id="note" placeholder="Kihnu ditte/Kithon aaye?" required>
+        <input type="number" id="amt" placeholder="Amount (₹)">
+        <input type="text" id="note" placeholder="Details (Vivar)">
         
         <div id="normalButtons" class="btn-group">
-            <button onclick="saveData('IN')" id="btnIn" class="btn btn-in">CASH IN (+)</button>
-            <button onclick="saveData('OUT')" id="btnOut" class="btn btn-out">CASH OUT (-)</button>
+            <button onclick="saveData('IN')" id="btnIn" class="btn btn-in">IN (+)</button>
+            <button onclick="saveData('OUT')" id="btnOut" class="btn btn-out">OUT (-)</button>
         </div>
-        
         <button id="updateBtn" onclick="updateData()" class="btn btn-update">Update Record</button>
-        <div id="status">Data load ho reha hai...</div>
+        <div id="status">Ready</div>
     </div>
 
     <div class="history-section">
-        <div class="history-header">
-            <b>Recent Transactions</b>
-            <span style="color:#1a73e8; cursor:pointer; font-size:12px;" onclick="fetchHistory()">Refresh</span>
-        </div>
-        <div id="historyLog">
-            </div>
+        <b>Transactions</b>
+        <div id="historyLog" style="margin-top:15px;">Loading...</div>
     </div>
 </div>
 
 <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbzHeZ6tSiFhDzVnmjkoumkuBH1Z8h4VdAVwT2IVm6c64rgnIYseWS1KrRuXPJpgOSKx/exec';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyzdKfu-RyAcemaBcr8Lp6GU8t_1GHSi23vOaRW5qjOPFbxdEA3vOZgaG__yrxUl1nA/exec';
 
-    // 1. Data load karan da function
     async function fetchHistory() {
-        const log = document.getElementById('historyLog');
-        const totalDisp = document.getElementById('totalDisplay');
-        const status = document.getElementById('status');
-        
-        try {
-            const response = await fetch(scriptURL);
-            const data = await response.json();
-            let total = 0, html = "";
+        const response = await fetch(scriptURL);
+        const data = await response.json();
+        let total = 0, html = "";
 
-            data.reverse().forEach(item => {
-                const val = parseFloat(item.amount);
-                const isIN = item.type === 'IN';
-                total += isIN ? val : -val;
-
-                html += `
-                    <div class="entry-item">
-                        <div class="entry-info">
-                            <span class="remark">${item.remark}</span>
-                            <span class="date">${new Date(item.date).toLocaleDateString('en-IN')}</span>
-                            <span class="edit-btn" onclick="startEdit(${item.row}, '${item.remark}', ${item.amount}, '${item.type}')">Edit Entry</span>
+        data.reverse().forEach(item => {
+            const isIN = item.type === 'IN';
+            total += isIN ? item.amount : -item.amount;
+            html += `
+                <div class="entry-item">
+                    <div>
+                        <span class="remark">${item.remark}</span><br>
+                        <span class="date">${new Date(item.date).toLocaleDateString()}</span>
+                        <div class="actions">
+                            <span class="edit-btn" onclick="startEdit(${item.row}, '${item.remark}', ${item.amount}, '${item.type}')">Edit</span>
+                            <span class="del-btn" onclick="deleteRow(${item.row})">Delete</span>
                         </div>
-                        <div class="${isIN ? 'amt-in' : 'amt-out'}">
-                            ${isIN ? '+' : '-'} ₹${val}
-                        </div>
-                    </div>`;
-            });
-
-            totalDisp.innerText = total.toLocaleString('en-IN');
-            log.innerHTML = html || "<p style='text-align:center; color:#999;'>No history yet</p>";
-            status.innerText = "Ready";
-        } catch (err) {
-            status.innerText = "Error loading data!";
-        }
+                    </div>
+                    <div class="${isIN ? 'amt-in' : 'amt-out'}">${isIN ? '+' : '-'} ₹${item.amount}</div>
+                </div>`;
+        });
+        document.getElementById('totalDisplay').innerText = total.toLocaleString('en-IN');
+        document.getElementById('historyLog').innerHTML = html || "No entries";
     }
 
-    // 2. Navi entry save karan da function
     async function saveData(type) {
-        const amtInput = document.getElementById('amt');
-        const noteInput = document.getElementById('note');
-        if(!amtInput.value || !noteInput.value) return alert("Pehlan details bharo!");
-
-        setLoading(true, "Saving...");
-
-        const payload = { amount: amtInput.value, remark: noteInput.value, type: type };
+        const payload = { amount: document.getElementById('amt').value, remark: document.getElementById('note').value, type: type };
+        document.getElementById('status').innerText = "Saving...";
         await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-        
         resetForm();
     }
 
-    // 3. Edit shuru karan da function
+    async function deleteRow(row) {
+        if(!confirm("Ki tusi pakka delete karna chaunde ho?")) return;
+        document.getElementById('status').innerText = "Deleting...";
+        await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action: "delete", row: row}) });
+        fetchHistory();
+        document.getElementById('status').innerText = "Deleted";
+    }
+
     function startEdit(row, remark, amount, type) {
         document.getElementById('editRow').value = row;
         document.getElementById('editType').value = type;
         document.getElementById('amt').value = amount;
         document.getElementById('note').value = remark;
-        
         document.getElementById('normalButtons').style.display = "none";
         document.getElementById('updateBtn').style.display = "block";
         window.scrollTo(0,0);
     }
 
-    // 4. Update karan da function
     async function updateData() {
-        const payload = {
-            action: "update",
-            row: document.getElementById('editRow').value,
-            amount: document.getElementById('amt').value,
-            remark: document.getElementById('note').value,
-            type: document.getElementById('editType').value
-        };
-
-        setLoading(true, "Updating Row " + payload.row + "...");
+        const payload = { action: "update", row: document.getElementById('editRow').value, amount: document.getElementById('amt').value, remark: document.getElementById('note').value, type: document.getElementById('editType').value };
+        document.getElementById('status').innerText = "Updating...";
         await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-        
         resetForm();
-    }
-
-    function setLoading(isLoading, text) {
-        document.getElementById('status').innerText = isLoading ? text : "Ready";
-        document.getElementById('btnIn').disabled = isLoading;
-        document.getElementById('btnOut').disabled = isLoading;
-        document.getElementById('updateBtn').disabled = isLoading;
     }
 
     function resetForm() {
         document.getElementById('amt').value = "";
         document.getElementById('note').value = "";
-        document.getElementById('editRow').value = "";
         document.getElementById('normalButtons').style.display = "flex";
         document.getElementById('updateBtn').style.display = "none";
-        setLoading(false);
+        document.getElementById('status').innerText = "Ready";
         fetchHistory();
     }
 
     fetchHistory();
 </script>
-
 </body>
 </html>
