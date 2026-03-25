@@ -3,129 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Cash Book Pro</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <title>Business Cash Book - Saini Trading Default</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 15px; display: flex; justify-content: center; }
-        .app-container { width: 100%; max-width: 420px; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
-        .header { background: #1a73e8; color: white; padding: 20px; text-align: center; }
-        .balance-amount { font-size: 32px; font-weight: bold; }
-        .search-filter-bar { background: #e8f0fe; padding: 15px; border-bottom: 2px solid #ddd; }
-        .search-input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
-        .filter-row { display: flex; justify-content: space-between; gap: 10px; }
-        .month-select { flex: 2; padding: 8px; border-radius: 8px; border: 1px solid #ccc; }
-        .pdf-btn { flex: 1; background: #34a853; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .form-section { padding: 20px; border-bottom: 8px solid #f0f2f5; }
-        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
+        :root { --primary: #1a237e; --secondary: #283593; --success: #2e7d32; --danger: #c62828; --bg: #f8f9fa; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; display: flex; justify-content: center; }
+        .app-container { width: 100%; max-width: 480px; background: white; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); overflow: hidden; }
+        
+        /* Business Tabs */
+        .account-tabs { display: flex; background: #eee; border-bottom: 2px solid #ddd; overflow-x: auto; }
+        .tab { flex: 1; padding: 12px 5px; text-align: center; font-weight: bold; color: #666; font-size: 11px; white-space: nowrap; border-right: 1px solid #ddd; cursor: pointer; transition: 0.3s; }
+        .tab.active { background: var(--primary); color: white; border-bottom: 4px solid #ffca28; }
+
+        .header { background: linear-gradient(45deg, var(--primary), var(--secondary)); color: white; padding: 20px; text-align: center; }
+        .balance-amount { font-size: 28px; font-weight: bold; margin-top: 5px; }
+        
+        .form-section { padding: 15px; border-bottom: 8px solid var(--bg); }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1.5px solid #d1d9e6; border-radius: 10px; font-size: 15px; box-sizing: border-box; outline: none; }
+        
         .btn-group { display: flex; gap: 10px; }
-        .btn { flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; }
-        .btn-in { background: #28a745; }
-        .btn-out { background: #dc3545; }
+        .btn { flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; color: white; }
+        .btn-in { background: var(--success); }
+        .btn-out { background: var(--danger); }
         .btn-update { background: #f39c12; width: 100%; display: none; margin-top: 10px; }
-        .history-section { padding: 15px; max-height: 380px; overflow-y: auto; background: #fafafa; }
-        .entry-item { background: white; padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .remark { font-weight: 600; color: #333; font-size: 15px; }
-        .date-time { font-size: 11px; color: #777; margin-top: 2px; }
+
+        .history-section { padding: 15px; background: #fff; min-height: 200px; }
+        .entry-item { background: #fff; padding: 12px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; }
+        .remark { font-weight: 600; color: #333; font-size: 14px; }
+        .date-time { font-size: 10px; color: #888; margin-top: 3px; }
         .actions { font-size: 12px; margin-top: 8px; display: flex; gap: 12px; }
-        .edit-btn { color: #1a73e8; cursor: pointer; }
-        .del-btn { color: #dc3545; cursor: pointer; }
-        .wa-btn { color: #25D366; cursor: pointer; font-weight: bold; }
-        .amt-in { color: #28a745; font-weight: bold; }
-        .amt-out { color: #dc3545; font-weight: bold; }
-        #status { text-align: center; font-size: 12px; color: #666; padding: 5px; }
+        .amt-in { color: var(--success); font-weight: bold; font-size: 16px; }
+        .amt-out { color: var(--danger); font-weight: bold; font-size: 16px; }
+        #status { text-align: center; font-size: 12px; color: #555; font-weight: bold; padding: 8px; }
     </style>
 </head>
 <body>
+
 <div class="app-container">
+    <div class="account-tabs">
+        <div id="tab1" class="tab" onclick="switchAccount('Khalsa_School', 'Khalsa International School')">Khalsa School</div>
+        <div id="tab2" class="tab active" onclick="switchAccount('Saini_Trading', 'Saini Trading Company')">Saini Trading</div>
+        <div id="tab3" class="tab" onclick="switchAccount('Krishna_Rice', 'Krishna Rice Mills')">Krishna Rice</div>
+    </div>
+
     <div class="header">
-        <div style="font-size: 14px; opacity: 0.9;">Current Balance</div>
+        <div id="accTitle" style="font-size: 12px; opacity: 0.9; margin-bottom:5px;">Saini Trading Company</div>
+        <div style="font-size: 11px; opacity: 0.8;">CURRENT BALANCE</div>
         <div class="balance-amount">₹<span id="totalDisplay">0</span></div>
     </div>
-    <div class="search-filter-bar">
-        <input type="text" id="searchInput" class="search-input" placeholder="Search entries..." onkeyup="renderData()">
-        <div class="filter-row">
-            <select id="monthFilter" class="month-select" onchange="renderData()">
-                <option value="all">All Months</option>
-                <option value="0">Jan</option><option value="1">Feb</option><option value="2">Mar</option>
-                <option value="3">Apr</option><option value="4">May</option><option value="5">Jun</option>
-                <option value="6">Jul</option><option value="7">Aug</option><option value="8">Sep</option>
-                <option value="9">Oct</option><option value="10">Nov</option><option value="11">Dec</option>
-            </select>
-            <button class="pdf-btn" onclick="downloadPDF()">PDF</button>
-        </div>
-    </div>
+
     <div class="form-section">
         <input type="hidden" id="editRow">
-        <input type="hidden" id="editType">
         <input type="number" id="amt" placeholder="Amount (₹)">
-        <input type="text" id="note" placeholder="Details (Remarks)">
+        <input type="text" id="note" placeholder="Details (Vivar)">
+        
         <div id="normalButtons" class="btn-group">
-            <button onclick="saveData('IN')" id="btnIn" class="btn btn-in">IN (+)</button>
-            <button onclick="saveData('OUT')" id="btnOut" class="btn btn-out">OUT (-)</button>
+            <button onclick="saveData('IN')" id="btnIn" class="btn btn-in">CASH IN (+)</button>
+            <button onclick="saveData('OUT')" id="btnOut" class="btn btn-out">CASH OUT (-)</button>
         </div>
         <button id="updateBtn" onclick="updateData()" class="btn btn-update">Update Entry</button>
         <div id="status">Ready</div>
     </div>
+
     <div class="history-section" id="historyLog">Loading...</div>
 </div>
 
 <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyqpU11q2MkRcM0wr-268SustoBW9N6xynOtW3gufdbX2YUH_EIKubRLYK_bJ_uO17R/exec';
-    let rawData = [];
+    // ⚠️ APNA SCRIPT URL ITHE PAO
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwGEuZp73ahYOy5tWphRMKPSLoufrWllDEBOuBKp0RUXXfzT4Xfh--HfUiNZ4bR2fWL/exec';
+    
+    // Default Account Saini Trading Set Kita Hai
+    let currentAcc = 'Saini_Trading';
+
+    async function switchAccount(id, fullName) {
+        currentAcc = id;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        if(id === 'Khalsa_School') document.getElementById('tab1').classList.add('active');
+        if(id === 'Saini_Trading') document.getElementById('tab2').classList.add('active');
+        if(id === 'Krishna_Rice') document.getElementById('tab3').classList.add('active');
+        
+        document.getElementById('accTitle').innerText = fullName;
+        document.getElementById('status').innerText = "Loading " + fullName + "...";
+        fetchHistory();
+    }
 
     async function fetchHistory() {
         try {
-            const response = await fetch(scriptURL);
-            rawData = await response.json();
-            renderData();
-        } catch (err) { document.getElementById('status').innerText = "Error!"; }
+            const response = await fetch(`${scriptURL}?acc=${currentAcc}`);
+            const data = await response.json();
+            renderData(data);
+        } catch (err) { document.getElementById('status').innerText = "Error loading data!"; }
     }
 
-    function renderData() {
+    function renderData(data) {
         const log = document.getElementById('historyLog');
-        const selectedMonth = document.getElementById('monthFilter').value;
-        const searchText = document.getElementById('searchInput').value.toLowerCase();
         let total = 0, html = "";
 
-        const filtered = rawData.filter(item => {
-            const matchesMonth = (selectedMonth === "all") || (new Date(item.date).getMonth() == selectedMonth);
-            const matchesSearch = item.remark.toLowerCase().includes(searchText);
-            return matchesMonth && matchesSearch;
-        });
-
-        filtered.reverse().forEach(item => {
+        data.slice().reverse().forEach(item => {
             const isIN = item.type === 'IN';
             total += isIN ? item.amount : -item.amount;
             const dt = new Date(item.date);
-            const dateStr = dt.toLocaleDateString('en-IN');
-            const timeStr = dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+            const dtStr = dt.toLocaleDateString('en-IN') + " | " + dt.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
 
             html += `
                 <div class="entry-item">
                     <div>
                         <span class="remark">${item.remark}</span><br>
-                        <span class="date-time">📅 ${dateStr} | 🕒 ${timeStr}</span>
+                        <span class="date-time">📅 ${dtStr}</span>
                         <div class="actions">
-                            <span class="edit-btn" onclick="startEdit(${item.row},'${item.remark}',${item.amount},'${item.type}')">Edit</span>
-                            <span class="wa-btn" onclick="shareWA('${item.remark}',${item.amount},'${item.type}','${dateStr}','${timeStr}')">WhatsApp</span>
-                            <span class="del-btn" onclick="deleteEntry(${item.row})">Delete</span>
+                            <span style="color:#1a73e8; cursor:pointer;" onclick="startEdit(${item.row},'${item.remark}',${item.amount})">Edit</span>
+                            <span style="color:red; cursor:pointer; margin-left:10px;" onclick="deleteEntry(${item.row})">Delete</span>
                         </div>
                     </div>
                     <div class="${isIN ? 'amt-in' : 'amt-out'}">${isIN ? '+' : '-'} ₹${item.amount}</div>
                 </div>`;
         });
         document.getElementById('totalDisplay').innerText = total.toLocaleString('en-IN');
-        log.innerHTML = html || "<p style='text-align:center;'>No entries found</p>";
-    }
-
-    function shareWA(note, amt, type, d, t) {
-        const msg = `*Cash Book Entry*%0A------------------%0A*Type:* ${type === 'IN' ? '✅ Cash IN (+)' : '❌ Cash OUT (-)'}%0A*Amount:* ₹${amt}%0A*Detail:* ${note}%0A*Date:* ${d}%0A*Time:* ${t}%0A------------------`;
-        window.open(`https://wa.me/?text=${msg}`, '_blank');
+        log.innerHTML = html || "<p style='text-align:center; font-size:12px; color:#999;'>No entries yet.</p>";
+        document.getElementById('status').innerText = "Account: " + currentAcc;
     }
 
     async function saveData(type) {
-        const payload = { amount: document.getElementById('amt').value, remark: document.getElementById('note').value, type: type };
+        const payload = { acc: currentAcc, amount: document.getElementById('amt').value, remark: document.getElementById('note').value, type: type };
         document.getElementById('status').innerText = "Saving...";
         await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
         resetForm();
@@ -133,13 +131,12 @@
 
     async function deleteEntry(row) {
         if(!confirm("Delete?")) return;
-        await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action: "delete", row: row}) });
+        await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action:"delete", row:row, acc:currentAcc}) });
         fetchHistory();
     }
 
-    function startEdit(row, note, amt, type) {
+    function startEdit(row, note, amt) {
         document.getElementById('editRow').value = row;
-        document.getElementById('editType').value = type;
         document.getElementById('amt').value = amt;
         document.getElementById('note').value = note;
         document.getElementById('normalButtons').style.display = "none";
@@ -148,7 +145,7 @@
     }
 
     async function updateData() {
-        const payload = { action: "update", row: document.getElementById('editRow').value, amount: document.getElementById('amt').value, remark: document.getElementById('note').value };
+        const payload = { action:"update", acc:currentAcc, row:document.getElementById('editRow').value, amount:document.getElementById('amt').value, remark:document.getElementById('note').value };
         await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
         resetForm();
     }
@@ -158,15 +155,6 @@
         document.getElementById('normalButtons').style.display = "flex";
         document.getElementById('updateBtn').style.display = "none";
         fetchHistory();
-    }
-
-    function downloadPDF() {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        doc.text("Cash Book Report", 14, 15);
-        const rows = rawData.map(item => [new Date(item.date).toLocaleString('en-IN'), item.remark, item.type, "Rs. " + item.amount]);
-        doc.autoTable({ head: [['Date & Time', 'Remark', 'Type', 'Amount']], body: rows, startY: 20 });
-        doc.save("CashBook.pdf");
     }
 
     fetchHistory();
