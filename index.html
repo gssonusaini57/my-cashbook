@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cash Book Pro</title>
+    <title>Cash Book Pro - Search & Filter</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     
@@ -13,10 +13,12 @@
         .header { background: #1a73e8; color: white; padding: 20px; text-align: center; }
         .balance-amount { font-size: 32px; font-weight: bold; margin: 5px 0; }
         
-        /* Filter Section Style */
-        .filter-bar { background: #e8f0fe; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ddd; }
-        .month-select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; width: 65%; }
-        .pdf-btn { background: #34a853; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        /* Search & Filter Bar */
+        .search-filter-bar { background: #e8f0fe; padding: 15px; border-bottom: 2px solid #ddd; }
+        .search-input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; font-size: 14px; }
+        .filter-row { display: flex; justify-content: space-between; gap: 10px; }
+        .month-select { flex: 2; padding: 8px; border-radius: 8px; border: 1px solid #ccc; }
+        .pdf-btn { flex: 1; background: #34a853; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
 
         .form-section { padding: 20px; border-bottom: 8px solid #f0f2f5; }
         input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
@@ -44,23 +46,20 @@
         <div class="balance-amount">₹<span id="totalDisplay">0</span></div>
     </div>
 
-    <div class="filter-bar">
-        <select id="monthFilter" class="month-select" onchange="renderData()">
-            <option value="all">All Months (Sara Data)</option>
-            <option value="0">January</option>
-            <option value="1">February</option>
-            <option value="2">March</option>
-            <option value="3">April</option>
-            <option value="4">May</option>
-            <option value="5">June</option>
-            <option value="6">July</option>
-            <option value="7">August</option>
-            <option value="8">September</option>
-            <option value="9">October</option>
-            <option value="10">November</option>
-            <option value="11">December</option>
-        </select>
-        <button class="pdf-btn" onclick="downloadPDF()">PDF</button>
+    <div class="search-filter-bar">
+        <input type="text" id="searchInput" class="search-input" placeholder="Naam ya detail naal search karo..." onkeyup="renderData()">
+        <div class="filter-row">
+            <select id="monthFilter" class="month-select" onchange="renderData()">
+                <option value="all">All Months</option>
+                <option value="0">January</option><option value="1">February</option>
+                <option value="2">March</option><option value="3">April</option>
+                <option value="4">May</option><option value="5">June</option>
+                <option value="6">July</option><option value="7">August</option>
+                <option value="8">September</option><option value="9">October</option>
+                <option value="10">November</option><option value="11">December</option>
+            </select>
+            <button class="pdf-btn" onclick="downloadPDF()">PDF</button>
+        </div>
     </div>
 
     <div class="form-section">
@@ -77,14 +76,13 @@
         <div id="status">Ready</div>
     </div>
 
-    <div class="history-section" id="historyLog">Loading Data...</div>
+    <div class="history-section" id="historyLog">Loading...</div>
 </div>
 
 <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbzHeZ6tSiFhDzVnmjkoumkuBH1Z8h4VdAVwT2IVm6c64rgnIYseWS1KrRuXPJpgOSKx/exec';
     let rawData = [];
 
-    // 1. Data Fetch Karo
     async function fetchHistory() {
         try {
             const response = await fetch(scriptURL);
@@ -93,18 +91,20 @@
         } catch (err) { document.getElementById('status').innerText = "Network Error!"; }
     }
 
-    // 2. Data nu Filter te Show Karo
     function renderData() {
         const log = document.getElementById('historyLog');
         const totalDisp = document.getElementById('totalDisplay');
         const selectedMonth = document.getElementById('monthFilter').value;
+        const searchText = document.getElementById('searchInput').value.toLowerCase();
         
         let total = 0;
         let html = "";
 
+        // Double Filtering: Month + Search Text
         const filtered = rawData.filter(item => {
-            if (selectedMonth === "all") return true;
-            return new Date(item.date).getMonth() == selectedMonth;
+            const matchesMonth = (selectedMonth === "all") || (new Date(item.date).getMonth() == selectedMonth);
+            const matchesSearch = item.remark.toLowerCase().includes(searchText);
+            return matchesMonth && matchesSearch;
         });
 
         filtered.reverse().forEach(item => {
@@ -125,10 +125,10 @@
         });
 
         totalDisp.innerText = total.toLocaleString('en-IN');
-        log.innerHTML = html || "<p style='text-align:center; padding:20px; color:#999;'>No entries found</p>";
+        log.innerHTML = html || "<p style='text-align:center; padding:20px; color:#999;'>No results found</p>";
     }
 
-    // Baaki Functions (Save, Edit, Delete, PDF)
+    // --- Same Functions (Save, Edit, Delete, PDF) ---
     async function saveData(type) {
         const payload = { amount: document.getElementById('amt').value, remark: document.getElementById('note').value, type: type };
         document.getElementById('status').innerText = "Saving...";
@@ -171,10 +171,10 @@
     function downloadPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        doc.text("Daily Cash Book Report", 14, 15);
+        doc.text("Cash Book Search Report", 14, 15);
         const rows = rawData.map(item => [new Date(item.date).toLocaleDateString('en-IN'), item.remark, item.type, "Rs. " + item.amount]);
         doc.autoTable({ head: [['Date', 'Description', 'Type', 'Amount']], body: rows, startY: 20 });
-        doc.save("CashBook_Report.pdf");
+        doc.save("Search_Report.pdf");
     }
 
     fetchHistory();
