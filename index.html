@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Business Cash Book - Saini Trading Default</title>
+    <title>Business Cash Book - Multi Account</title>
     <style>
         :root { --primary: #1a237e; --secondary: #283593; --success: #2e7d32; --danger: #c62828; --bg: #f8f9fa; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; display: flex; justify-content: center; }
@@ -27,13 +27,19 @@
         .btn-update { background: #f39c12; width: 100%; display: none; margin-top: 10px; }
 
         .history-section { padding: 15px; background: #fff; min-height: 200px; }
-        .entry-item { background: #fff; padding: 12px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; }
+        .entry-item { background: #fff; padding: 12px; border-radius: 12px; margin-bottom: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .remark { font-weight: 600; color: #333; font-size: 14px; }
         .date-time { font-size: 10px; color: #888; margin-top: 3px; }
-        .actions { font-size: 12px; margin-top: 8px; display: flex; gap: 12px; }
+        
+        /* Action Links Style */
+        .actions { font-size: 12px; margin-top: 10px; display: flex; gap: 12px; align-items: center; }
+        .edit-link { color: #1a73e8; cursor: pointer; text-decoration: underline; }
+        .del-link { color: #c62828; cursor: pointer; text-decoration: underline; }
+        .wa-link { color: #25D366; cursor: pointer; font-weight: bold; text-decoration: none; border: 1px solid #25D366; padding: 2px 6px; border-radius: 4px; }
+        
         .amt-in { color: var(--success); font-weight: bold; font-size: 16px; }
         .amt-out { color: var(--danger); font-weight: bold; font-size: 16px; }
-        #status { text-align: center; font-size: 12px; color: #555; font-weight: bold; padding: 8px; }
+        #status { text-align: center; font-size: 12px; color: #555; padding: 8px; }
     </style>
 </head>
 <body>
@@ -69,9 +75,7 @@
 
 <script>
     // ⚠️ APNA SCRIPT URL ITHE PAO
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbwGEuZp73ahYOy5tWphRMKPSLoufrWllDEBOuBKp0RUXXfzT4Xfh--HfUiNZ4bR2fWL/exec';
-    
-    // Default Account Saini Trading Set Kita Hai
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzHeZ6tSiFhDzVnmjkoumkuBH1Z8h4VdAVwT2IVm6c64rgnIYseWS1KrRuXPJpgOSKx/exec';
     let currentAcc = 'Saini_Trading';
 
     async function switchAccount(id, fullName) {
@@ -82,7 +86,6 @@
         if(id === 'Krishna_Rice') document.getElementById('tab3').classList.add('active');
         
         document.getElementById('accTitle').innerText = fullName;
-        document.getElementById('status').innerText = "Loading " + fullName + "...";
         fetchHistory();
     }
 
@@ -91,7 +94,7 @@
             const response = await fetch(`${scriptURL}?acc=${currentAcc}`);
             const data = await response.json();
             renderData(data);
-        } catch (err) { document.getElementById('status').innerText = "Error loading data!"; }
+        } catch (err) { document.getElementById('status').innerText = "Error!"; }
     }
 
     function renderData(data) {
@@ -102,7 +105,7 @@
             const isIN = item.type === 'IN';
             total += isIN ? item.amount : -item.amount;
             const dt = new Date(item.date);
-            const dtStr = dt.toLocaleDateString('en-IN') + " | " + dt.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+            const dtStr = dt.toLocaleDateString('en-IN') + " " + dt.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
 
             html += `
                 <div class="entry-item">
@@ -110,16 +113,22 @@
                         <span class="remark">${item.remark}</span><br>
                         <span class="date-time">📅 ${dtStr}</span>
                         <div class="actions">
-                            <span style="color:#1a73e8; cursor:pointer;" onclick="startEdit(${item.row},'${item.remark}',${item.amount})">Edit</span>
-                            <span style="color:red; cursor:pointer; margin-left:10px;" onclick="deleteEntry(${item.row})">Delete</span>
+                            <span class="edit-link" onclick="startEdit(${item.row},'${item.remark}',${item.amount})">Edit</span>
+                            <span class="wa-link" onclick="shareWA('${item.remark}',${item.amount},'${item.type}','${dtStr}')">WhatsApp</span>
+                            <span class="del-link" onclick="deleteEntry(${item.row})">Delete</span>
                         </div>
                     </div>
                     <div class="${isIN ? 'amt-in' : 'amt-out'}">${isIN ? '+' : '-'} ₹${item.amount}</div>
                 </div>`;
         });
         document.getElementById('totalDisplay').innerText = total.toLocaleString('en-IN');
-        log.innerHTML = html || "<p style='text-align:center; font-size:12px; color:#999;'>No entries yet.</p>";
-        document.getElementById('status').innerText = "Account: " + currentAcc;
+        log.innerHTML = html || "<p style='text-align:center; font-size:12px;'>No entries.</p>";
+        document.getElementById('status').innerText = "Ready";
+    }
+
+    function shareWA(note, amt, type, dt) {
+        const msg = `*${document.getElementById('accTitle').innerText}*%0A------------------%0A*Detail:* ${note}%0A*Amount:* ₹${amt}%0A*Type:* ${type === 'IN' ? '✅ CASH IN' : '❌ CASH OUT'}%0A*Time:* ${dt}%0A------------------`;
+        window.open(`https://wa.me/?text=${msg}`, '_blank');
     }
 
     async function saveData(type) {
