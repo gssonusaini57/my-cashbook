@@ -3,36 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quick Cash Book</title>
+    <title>Cash Book with Edit</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 15px; display: flex; justify-content: center; }
-        .app-container { width: 100%; max-width: 400px; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); overflow: hidden; }
+        .app-container { width: 100%; max-width: 400px; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
         .header { background: #1a73e8; color: white; padding: 25px; text-align: center; }
-        .balance-amount { font-size: 34px; font-weight: bold; margin-top: 5px; }
+        .balance-amount { font-size: 32px; font-weight: bold; margin-top: 5px; }
         
-        .form-section { padding: 20px; background: #fff; }
-        input { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; outline: none; }
-        input:focus { border-color: #1a73e8; }
+        .form-section { padding: 20px; border-bottom: 8px solid #f4f7f6; }
+        input { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
         
-        .button-group { display: flex; gap: 10px; }
-        .btn { flex: 1; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
+        .btn-group { display: flex; gap: 10px; }
+        .btn { flex: 1; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; }
         .btn-in { background: #28a745; }
-        .btn-in:active { background: #1e7e34; transform: scale(0.96); }
         .btn-out { background: #dc3545; }
-        .btn-out:active { background: #bd2130; transform: scale(0.96); }
+        .btn-update { background: #f39c12; width: 100%; display: none; margin-top: 10px; }
         .btn:disabled { background: #ccc; cursor: not-allowed; }
 
-        .history-section { padding: 20px; background: #fafafa; min-height: 200px; }
-        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .refresh-link { color: #1a73e8; font-size: 13px; cursor: pointer; text-decoration: underline; }
-        
-        .entry-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; background: white; margin-bottom: 5px; border-radius: 8px; }
+        .history-section { padding: 20px; background: #fafafa; }
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; color: #555; }
+        .entry-item { background: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .entry-info { display: flex; flex-direction: column; }
         .remark { font-weight: 600; color: #333; }
-        .date { font-size: 11px; color: #888; }
+        .date { font-size: 11px; color: #888; margin-top: 2px; }
+        .edit-btn { color: #1a73e8; font-size: 12px; cursor: pointer; text-decoration: underline; margin-top: 5px; width: fit-content; }
         .amt-in { color: #28a745; font-weight: bold; }
         .amt-out { color: #dc3545; font-weight: bold; }
-        #statusMsg { text-align: center; font-size: 12px; margin-top: 10px; color: #666; }
+        #status { text-align: center; font-size: 13px; color: #666; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -44,20 +41,25 @@
     </div>
 
     <div class="form-section">
+        <input type="hidden" id="editRow">
+        <input type="hidden" id="editType">
+
         <input type="number" id="amt" placeholder="Amount (₹)" required>
-        <input type="text" id="note" placeholder="Vivar (Kihnu/Kithon?)" required>
+        <input type="text" id="note" placeholder="Kihnu ditte/Kithon aaye?" required>
         
-        <div class="button-group">
-            <button onclick="sendData('IN')" id="btnIn" class="btn btn-in">CASH IN (+)</button>
-            <button onclick="sendData('OUT')" id="btnOut" class="btn btn-out">CASH OUT (-)</button>
+        <div id="normalButtons" class="btn-group">
+            <button onclick="saveData('IN')" id="btnIn" class="btn btn-in">CASH IN (+)</button>
+            <button onclick="saveData('OUT')" id="btnOut" class="btn btn-out">CASH OUT (-)</button>
         </div>
-        <div id="statusMsg">Data load ho reha hai...</div>
+        
+        <button id="updateBtn" onclick="updateData()" class="btn btn-update">Update Record</button>
+        <div id="status">Data load ho reha hai...</div>
     </div>
 
     <div class="history-section">
         <div class="history-header">
-            <b style="color:#555">Recent Transactions</b>
-            <span class="refresh-link" onclick="fetchHistory()">Refresh</span>
+            <b>Recent Transactions</b>
+            <span style="color:#1a73e8; cursor:pointer; font-size:12px;" onclick="fetchHistory()">Refresh</span>
         </div>
         <div id="historyLog">
             </div>
@@ -65,20 +67,18 @@
 </div>
 
 <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyrcmwdyhzj4DHLdbMNU3ZXX8Z-wmoqXPxrvM9E3J9YZlSGWycuMCKqIyueRfh9P-gV/exec';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzHeZ6tSiFhDzVnmjkoumkuBH1Z8h4VdAVwT2IVm6c64rgnIYseWS1KrRuXPJpgOSKx/exec';
 
-    // 1. Data Fetch Karan Layi
+    // 1. Data load karan da function
     async function fetchHistory() {
         const log = document.getElementById('historyLog');
         const totalDisp = document.getElementById('totalDisplay');
-        const status = document.getElementById('statusMsg');
+        const status = document.getElementById('status');
         
         try {
             const response = await fetch(scriptURL);
             const data = await response.json();
-            
-            let total = 0;
-            let html = "";
+            let total = 0, html = "";
 
             data.reverse().forEach(item => {
                 const val = parseFloat(item.amount);
@@ -90,6 +90,7 @@
                         <div class="entry-info">
                             <span class="remark">${item.remark}</span>
                             <span class="date">${new Date(item.date).toLocaleDateString('en-IN')}</span>
+                            <span class="edit-btn" onclick="startEdit(${item.row}, '${item.remark}', ${item.amount}, '${item.type}')">Edit Entry</span>
                         </div>
                         <div class="${isIN ? 'amt-in' : 'amt-out'}">
                             ${isIN ? '+' : '-'} ₹${val}
@@ -101,54 +102,69 @@
             log.innerHTML = html || "<p style='text-align:center; color:#999;'>No history yet</p>";
             status.innerText = "Ready";
         } catch (err) {
-            status.innerText = "Error loading history!";
+            status.innerText = "Error loading data!";
         }
     }
 
-    // 2. Data Send Karan Layi
-    async function sendData(type) {
+    // 2. Navi entry save karan da function
+    async function saveData(type) {
         const amtInput = document.getElementById('amt');
         const noteInput = document.getElementById('note');
-        const status = document.getElementById('statusMsg');
-        const btnIn = document.getElementById('btnIn');
-        const btnOut = document.getElementById('btnOut');
+        if(!amtInput.value || !noteInput.value) return alert("Pehlan details bharo!");
 
-        if(!amtInput.value || !noteInput.value) {
-            alert("Please Amount te Detail bharo!");
-            return;
-        }
+        setLoading(true, "Saving...");
 
-        const payload = {
-            amount: amtInput.value,
-            remark: noteInput.value,
-            type: type
-        };
-
-        // Buttons disable karo
-        btnIn.disabled = true;
-        btnOut.disabled = true;
-        status.innerText = "Saving to Google Sheets...";
-
-        try {
-            await fetch(scriptURL, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify(payload)
-            });
-            
-            amtInput.value = "";
-            noteInput.value = "";
-            status.innerText = "Saved Successfully!";
-            fetchHistory(); // List update karo
-        } catch (e) {
-            alert("Error saving!");
-        } finally {
-            btnIn.disabled = false;
-            btnOut.disabled = false;
-        }
+        const payload = { amount: amtInput.value, remark: noteInput.value, type: type };
+        await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+        
+        resetForm();
     }
 
-    // Start te data load karo
+    // 3. Edit shuru karan da function
+    function startEdit(row, remark, amount, type) {
+        document.getElementById('editRow').value = row;
+        document.getElementById('editType').value = type;
+        document.getElementById('amt').value = amount;
+        document.getElementById('note').value = remark;
+        
+        document.getElementById('normalButtons').style.display = "none";
+        document.getElementById('updateBtn').style.display = "block";
+        window.scrollTo(0,0);
+    }
+
+    // 4. Update karan da function
+    async function updateData() {
+        const payload = {
+            action: "update",
+            row: document.getElementById('editRow').value,
+            amount: document.getElementById('amt').value,
+            remark: document.getElementById('note').value,
+            type: document.getElementById('editType').value
+        };
+
+        setLoading(true, "Updating Row " + payload.row + "...");
+        await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+        
+        resetForm();
+    }
+
+    function setLoading(isLoading, text) {
+        document.getElementById('status').innerText = isLoading ? text : "Ready";
+        document.getElementById('btnIn').disabled = isLoading;
+        document.getElementById('btnOut').disabled = isLoading;
+        document.getElementById('updateBtn').disabled = isLoading;
+    }
+
+    function resetForm() {
+        document.getElementById('amt').value = "";
+        document.getElementById('note').value = "";
+        document.getElementById('editRow').value = "";
+        document.getElementById('normalButtons').style.display = "flex";
+        document.getElementById('updateBtn').style.display = "none";
+        setLoading(false);
+        fetchHistory();
+    }
+
     fetchHistory();
 </script>
 
