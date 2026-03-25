@@ -3,32 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cash Book Pro - Filter & PDF</title>
+    <title>Cash Book Pro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 15px; display: flex; justify-content: center; }
-        .app-container { width: 100%; max-width: 450px; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 15px; display: flex; justify-content: center; }
+        .app-container { width: 100%; max-width: 420px; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
         .header { background: #1a73e8; color: white; padding: 20px; text-align: center; }
-        .balance-amount { font-size: 30px; font-weight: bold; }
+        .balance-amount { font-size: 32px; font-weight: bold; margin: 5px 0; }
         
-        .form-section { padding: 15px; border-bottom: 5px solid #f4f7f6; }
-        input, select { width: 100%; padding: 10px; margin-bottom: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
-        
-        .btn-group { display: flex; gap: 8px; }
-        .btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; color: white; }
+        /* Filter Section Style */
+        .filter-bar { background: #e8f0fe; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ddd; }
+        .month-select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; width: 65%; }
+        .pdf-btn { background: #34a853; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: bold; }
+
+        .form-section { padding: 20px; border-bottom: 8px solid #f0f2f5; }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
+        .btn-group { display: flex; gap: 10px; }
+        .btn { flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; }
         .btn-in { background: #28a745; }
         .btn-out { background: #dc3545; }
-        .btn-update { background: #f39c12; width: 100%; display: none; margin-top: 5px; }
+        .btn-update { background: #f39c12; width: 100%; display: none; margin-top: 10px; }
 
-        .filter-section { padding: 10px 15px; background: #eef2f3; display: flex; justify-content: space-between; align-items: center; }
-        .btn-pdf { background: #17a2b8; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; }
-
-        .history-section { padding: 15px; max-height: 400px; overflow-y: auto; }
-        .entry-item { background: white; padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .actions { font-size: 11px; margin-top: 5px; color: #1a73e8; }
-        .del-btn { color: #dc3545; margin-left: 10px; cursor: pointer; }
+        .history-section { padding: 15px; max-height: 350px; overflow-y: auto; background: #fafafa; }
+        .entry-item { background: white; padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .remark { font-weight: 600; color: #333; }
+        .date { font-size: 11px; color: #888; }
+        .actions { font-size: 12px; margin-top: 5px; color: #1a73e8; cursor: pointer; }
         .amt-in { color: #28a745; font-weight: bold; }
         .amt-out { color: #dc3545; font-weight: bold; }
         #status { text-align: center; font-size: 12px; color: #666; padding: 5px; }
@@ -38,58 +40,69 @@
 
 <div class="app-container">
     <div class="header">
-        <div style="font-size: 13px;">Total Balance</div>
+        <div style="font-size: 14px; opacity: 0.9;">Total Balance</div>
         <div class="balance-amount">₹<span id="totalDisplay">0</span></div>
+    </div>
+
+    <div class="filter-bar">
+        <select id="monthFilter" class="month-select" onchange="renderData()">
+            <option value="all">All Months (Sara Data)</option>
+            <option value="0">January</option>
+            <option value="1">February</option>
+            <option value="2">March</option>
+            <option value="3">April</option>
+            <option value="4">May</option>
+            <option value="5">June</option>
+            <option value="6">July</option>
+            <option value="7">August</option>
+            <option value="8">September</option>
+            <option value="9">October</option>
+            <option value="10">November</option>
+            <option value="11">December</option>
+        </select>
+        <button class="pdf-btn" onclick="downloadPDF()">PDF</button>
     </div>
 
     <div class="form-section">
         <input type="hidden" id="editRow">
         <input type="hidden" id="editType">
         <input type="number" id="amt" placeholder="Amount (₹)">
-        <input type="text" id="note" placeholder="Details (Kihnu/Kithon?)">
+        <input type="text" id="note" placeholder="Vivar (Details)">
         
         <div id="normalButtons" class="btn-group">
             <button onclick="saveData('IN')" id="btnIn" class="btn btn-in">IN (+)</button>
             <button onclick="saveData('OUT')" id="btnOut" class="btn btn-out">OUT (-)</button>
         </div>
-        <button id="updateBtn" onclick="updateData()" class="btn btn-update">Update Entry</button>
+        <button id="updateBtn" onclick="updateData()" class="btn btn-update">Update Record</button>
         <div id="status">Ready</div>
     </div>
 
-    <div class="filter-section">
-        <select id="monthFilter" style="width: 60%; margin:0;" onchange="renderHistory()">
-            <option value="all">All Months (Sara Data)</option>
-            <option value="0">January</option><option value="1">February</option>
-            <option value="2">March</option><option value="3">April</option>
-            <option value="4">May</option><option value="5">June</option>
-            <option value="6">July</option><option value="7">August</option>
-            <option value="8">September</option><option value="9">October</option>
-            <option value="10">November</option><option value="11">December</option>
-        </select>
-        <button class="btn-pdf" onclick="downloadPDF()">Download PDF</button>
-    </div>
-
-    <div class="history-section" id="historyLog">Loading...</div>
+    <div class="history-section" id="historyLog">Loading Data...</div>
 </div>
 
 <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbzHeZ6tSiFhDzVnmjkoumkuBH1Z8h4VdAVwT2IVm6c64rgnIYseWS1KrRuXPJpgOSKx/exec';
-    let fullData = [];
+    let rawData = [];
 
+    // 1. Data Fetch Karo
     async function fetchHistory() {
         try {
             const response = await fetch(scriptURL);
-            fullData = await response.json();
-            renderHistory();
-        } catch (err) { document.getElementById('status').innerText = "Error loading data!"; }
+            rawData = await response.json();
+            renderData();
+        } catch (err) { document.getElementById('status').innerText = "Network Error!"; }
     }
 
-    function renderHistory() {
+    // 2. Data nu Filter te Show Karo
+    function renderData() {
         const log = document.getElementById('historyLog');
+        const totalDisp = document.getElementById('totalDisplay');
         const selectedMonth = document.getElementById('monthFilter').value;
-        let total = 0, html = "";
+        
+        let total = 0;
+        let html = "";
 
-        const filtered = fullData.filter(item => {
+        const filtered = rawData.filter(item => {
             if (selectedMonth === "all") return true;
             return new Date(item.date).getMonth() == selectedMonth;
         });
@@ -100,20 +113,22 @@
             html += `
                 <div class="entry-item">
                     <div>
-                        <span style="font-weight:600">${item.remark}</span><br>
-                        <small style="color:#888">${new Date(item.date).toLocaleDateString('en-IN')}</small>
+                        <span class="remark">${item.remark}</span><br>
+                        <span class="date">${new Date(item.date).toLocaleDateString('en-IN')}</span>
                         <div class="actions">
-                            <span onclick="startEdit(${item.row},'${item.remark}',${item.amount},'${item.type}')" style="cursor:pointer">Edit</span>
-                            <span class="del-btn" onclick="deleteEntry(${item.row})">Delete</span>
+                            <span onclick="startEdit(${item.row},'${item.remark}',${item.amount},'${item.type}')">Edit</span> | 
+                            <span style="color:red" onclick="deleteEntry(${item.row})">Delete</span>
                         </div>
                     </div>
                     <div class="${isIN ? 'amt-in' : 'amt-out'}">${isIN ? '+' : '-'} ₹${item.amount}</div>
                 </div>`;
         });
-        document.getElementById('totalDisplay').innerText = total.toLocaleString('en-IN');
-        log.innerHTML = html || "<p style='text-align:center; padding:20px; color:#999;'>No data for this month</p>";
+
+        totalDisp.innerText = total.toLocaleString('en-IN');
+        log.innerHTML = html || "<p style='text-align:center; padding:20px; color:#999;'>No entries found</p>";
     }
 
+    // Baaki Functions (Save, Edit, Delete, PDF)
     async function saveData(type) {
         const payload = { amount: document.getElementById('amt').value, remark: document.getElementById('note').value, type: type };
         document.getElementById('status').innerText = "Saving...";
@@ -122,7 +137,7 @@
     }
 
     async function deleteEntry(row) {
-        if(!confirm("Ki tusi delete karna chaunde ho?")) return;
+        if(!confirm("Delete karna hai?")) return;
         document.getElementById('status').innerText = "Deleting...";
         await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action: "delete", row: row}) });
         fetchHistory();
@@ -157,19 +172,8 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         doc.text("Daily Cash Book Report", 14, 15);
-        
-        const rows = fullData.map(item => [
-            new Date(item.date).toLocaleDateString('en-IN'),
-            item.remark,
-            item.type,
-            "Rs. " + item.amount
-        ]);
-
-        doc.autoTable({
-            head: [['Date', 'Description', 'Type', 'Amount']],
-            body: rows,
-            startY: 20
-        });
+        const rows = rawData.map(item => [new Date(item.date).toLocaleDateString('en-IN'), item.remark, item.type, "Rs. " + item.amount]);
+        doc.autoTable({ head: [['Date', 'Description', 'Type', 'Amount']], body: rows, startY: 20 });
         doc.save("CashBook_Report.pdf");
     }
 
